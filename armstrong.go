@@ -1,36 +1,50 @@
 package armstrong
 
 import (
-	"github.com/thoas/go-funk"
-	"math"
+	"math/big"
 )
 
-func IsArmstrong(number float64) bool {
+func IsArmstrong(number *big.Int) bool {
+
 	digits := getDigitsFromNumber(number)
-	return number == sumOfPowers(digits)
+	sumOfPowers := sumOfPowers(digits)
+	return equals(number, sumOfPowers)
 }
 
-func getDigitsFromNumber(number float64) []int {
-	digits := make([]int, 0)
+func getDigitsFromNumber(number *big.Int) []int64 {
 
-	for exponentOfTen := 0;; exponentOfTen ++ {
-		powerOfTen := math.Pow(10, float64(exponentOfTen))
-		if powerOfTen > number {
-			break
-		}
-		digit := int(math.Mod(number / powerOfTen, 10))
-		digits = append(digits, digit)
+	digits := make([]int64, 0)
+	ten := big.NewInt(10)
+	auxNumber := new(big.Int).Set(number)
+
+	for greaterThanZero(auxNumber) {
+
+		remainder := new(big.Int).Mod(auxNumber, ten).Int64()
+		digits = append(digits, remainder)
+
+		auxNumber.Div(auxNumber, ten)
 	}
 
-	return funk.ReverseInt(digits)
+	return digits // in reverse order, but it does not affect the result
 }
 
-func sumOfPowers(digits []int) float64 {
-	powers := funk.Map(digits, func(digit int) float64 {
-		return math.Pow(float64(digit), float64(len(digits)))
-	})
+func sumOfPowers(digits []int64) *big.Int {
 
-	return funk.Reduce(powers, func(sum float64, power float64) float64 {
-		return sum + power
-	}, 0)
+	numberOfDigits := big.NewInt(int64(len(digits)))
+	sum := big.NewInt(0)
+
+	for _, digit := range digits {
+		power := new(big.Int).Exp(big.NewInt(digit), numberOfDigits, nil)
+		sum.Add(sum, power)
+	}
+
+	return sum
+}
+
+func greaterThanZero(number *big.Int) bool {
+	return number.Cmp(big.NewInt(0)) > 0
+}
+
+func equals(number *big.Int, secondNumber *big.Int) bool {
+	return number.Cmp(secondNumber) == 0
 }
